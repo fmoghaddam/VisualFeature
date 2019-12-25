@@ -186,3 +186,11 @@ class TagGenomeBuilder(Base):
             }
         )
         return df_tag_genome_vf
+
+    @staticmethod
+    def get_to_n_tags(df_tag_genome_vf: pd.DataFrame, n: int = 10) -> pd.DataFrame:
+        df_tag_genome_vf.sort_values('relevance', ascending=False, inplace=True)
+
+        df_top_n_tags = df_tag_genome_vf.groupby(['movieId']).head(n).sort_values(['movieId', 'tagID'],
+                                                                                  ascending=False)
+        return df_top_n_tags
