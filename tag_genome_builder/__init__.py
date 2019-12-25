@@ -112,10 +112,8 @@ class TagGenomeBuilder(Base):
 
     def fit(self, df_genome_score: pd.DataFrame, df_visual_feature: pd.DataFrame):
         """
-        :param df_genome_score: only included train data (movies has to be splitted)
-        :param df_visual_feature: can be the total dataset, will be filtered according to
-        df_genome_score
-
+        :param df_genome_score: can be the total dataset, will be filtered according to df_visual_feature
+        :param df_visual_feature: only included train data (movies has to be splitted)
         :return  sparse matrix of tag genome
         """
         assert df_visual_feature.isnull().sum().sum() == 0, ('df_visual_feature has missing values. Impute or'
@@ -135,26 +133,39 @@ class TagGenomeBuilder(Base):
         csr_genome = self.tag_genome_to_sparse(df_genome_scores=df_genome_score,
                                                encoder_movieid=self.encoder_movieid,
                                                encoder_tagid=self.encoder_tagid)
-        assert csr_agg.shape[1] == csr_genome.shape[0], (f'shapes od matrices are not compatible for dot'
+        assert csr_agg.shape[1] == csr_genome.shape[0], (f'shapes of matrices are not compatible for dot '
                                                          f'product {csr_agg.shape} and {csr_genome.shape}')
         self.genome_score_visual_features = csr_agg.dot(csr_genome)
         return self.genome_score_visual_features
 
     def output_vf_genome_matrix_to_df(self, path_to_write: str = None) -> pd.DataFrame:
+        """
+        Convert the computed visual_feture genome matrix to a dataframe like the coo matrix for writing
+        :param path_to_write: optional path to wrtite a datafraem to disk as .csv file
+        """
         pp.label.check_is_fitted(self, 'genome_score_visual_features')
         genome_score_visual_features_coo = self.genome_score_visual_features.tocoo()
         df_genome_visual_feature = pd.DataFrame(
-            {'visual_feature':
-                visual_feature_to_sparse.encoder_visual_feature.inverse_transform
-                (genome_score_visual_features_coo.row),
-             'tagId': self.encoder_tagid.inverse_transform(genome_score_visual_features_coo.col),
-             'relevance': genome_score_visual_features_coo.data})
+            {
+                'visual_feature':
+                    visual_feature_to_sparse.encoder_visual_feature.inverse_transform
+                    (genome_score_visual_features_coo.row),
+                'tagId': self.encoder_tagid.inverse_transform(genome_score_visual_features_coo.col),
+                'relevance': genome_score_visual_features_coo.data
+            }
+        )
         df_genome_visual_feature.dropna(inplace=True)
         if path_to_write is not None:
             df_genome_visual_feature.to_csv(path_to_write)
         return df_genome_visual_feature
 
-    def transform(self, df_visual_feature: pd.DataFrame, output_df=False):
+    def transform(self, df_visual_feature: pd.DataFrame, output_df: bool = False):
+        """
+        Compute the relevance to tags using visual features of new movies and the matrix computed in fit
+        :param df_visual_feature: dataframe of aggregated visual features with movieId as index
+        :param output_df: boolean if the matrix has to be converted to dataframe like
+        output_vf_genome_matrix_to_df
+        """
         pp.label.check_is_fitted(self, 'genome_score_visual_features')
         pp.label.check_is_fitted(visual_feature_normalizer, 'normalizer')
         assert df_visual_feature.isnull().sum().sum() == 0, ('df_visual_feature has missing values. Impute or'
