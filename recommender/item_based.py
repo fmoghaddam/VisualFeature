@@ -18,7 +18,7 @@ class ItemFeature(object):
         self.feature_matrix = feature_matrix
 
 
-class ItemBasedColabSin(object):
+class ItemBasedColabCos(object):
     def __init__(self):
         pass
 
@@ -37,8 +37,13 @@ class ItemBasedColabSin(object):
     def predict(self, user_id, new_items):
         """for the given user_id give the predicted rates for new_items"""
         check_is_fitted(self, ['item_features', 'dict_user_ratings'])
-
-        pass
+        csr_user_matrix = self.get_user_matrix(user_id)
+        l_user_ratings = self.dict_user_ratings.get(user_id)
+        assert l_user_ratings is not None, 'user not found'
+        csr_new_items_matrix = self.get_items_matrix(new_items)
+        csr_similarities = csr_new_items_matrix.dot(csr_user_matrix.transpose())
+        csr_similarities_weighted = sparse.diags(l_user_ratings).dot(csr_similarities)
+        new_ratings = csr_similarities_weighted.sum(axis=1) / csr_similarities.sum(axis=1)
 
     def items_to_feature_space(self, df) -> sparse.csr_matrix:
         pass
