@@ -2,8 +2,8 @@ from scipy import sparse
 import numpy as np
 import pandas as pd
 from collections import namedtuple
-from sklearn.preprocessing.label import check_is_fitted
-# import sklearn.preprocessing as pp
+
+from lib import check_is_fitted
 
 movieId_col = 'movieId'
 userId_col = 'userId'

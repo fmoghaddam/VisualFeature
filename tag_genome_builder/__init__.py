@@ -2,6 +2,7 @@ import pandas as pd
 import sklearn.preprocessing as pp
 from scipy import sparse
 from sklearn.base import clone
+from lib import check_is_fitted
 
 
 class VisualFeatureToSparse(object):
@@ -12,7 +13,7 @@ class VisualFeatureToSparse(object):
             -> sparse.csr_matrix:
         """the encoder_movieid has to be fitted"""
 
-        pp.label.check_is_fitted(encoder_movieid, 'classes_')
+        check_is_fitted(encoder_movieid, 'classes_')
         assert df_agg_normalized.index.name == 'movieId'
 
         df_agg_melted = pd.melt(df_agg_normalized.reset_index(), id_vars=['movieId'])
@@ -44,7 +45,7 @@ class VisualFeatureNormalizer(object):
         self.normalizer.fit(df_vf)
 
     def transform(self, df_vf: pd.DataFrame) -> (pd.DataFrame, object):
-        pp.label.check_is_fitted(self, 'normalizer')
+        check_is_fitted(self, 'normalizer')
         normalized_agg_visual_features = self.normalizer.transform(df_vf)
         df_agg_normalized = pd.DataFrame(normalized_agg_visual_features,
                                          columns=df_vf.columns, index=df_vf.index)
@@ -65,8 +66,8 @@ class Base(object):
                              encoder_movieid: pp.LabelEncoder, encoder_tagid: pp.LabelEncoder)\
             -> sparse.csr_matrix:
         """compute the csr sparse matrix of tag genomes having *fitted* encoders"""
-        pp.label.check_is_fitted(encoder_movieid, 'classes_')
-        pp.label.check_is_fitted(encoder_tagid, 'classes_')
+        check_is_fitted(encoder_movieid, 'classes_')
+        check_is_fitted(encoder_tagid, 'classes_')
         rows = encoder_movieid.transform(df_genome_scores.movieId)
         columns = encoder_tagid.fit_transform(df_genome_scores.tagId)
         sparse_gnome = sparse.coo_matrix((df_genome_scores.relevance, (rows, columns)))
@@ -143,7 +144,7 @@ class TagGenomeBuilder(Base):
         Convert the computed visual_feture genome matrix to a dataframe like the coo matrix for writing
         :param path_to_write: optional path to wrtite a datafraem to disk as .csv file
         """
-        pp.label.check_is_fitted(self, 'genome_score_visual_features')
+        check_is_fitted(self, 'genome_score_visual_features')
         genome_score_visual_features_coo = self.genome_score_visual_features.tocoo()
         df_genome_visual_feature = pd.DataFrame(
             {
@@ -166,8 +167,8 @@ class TagGenomeBuilder(Base):
         :param output_df: boolean if the matrix has to be converted to dataframe like
         output_vf_genome_matrix_to_df
         """
-        pp.label.check_is_fitted(self, 'genome_score_visual_features')
-        pp.label.check_is_fitted(visual_feature_normalizer, 'normalizer')
+        check_is_fitted(self, 'genome_score_visual_features')
+        check_is_fitted(visual_feature_normalizer, 'normalizer')
         assert df_visual_feature.isnull().sum().sum() == 0, ('df_visual_feature has missing values. Impute or'
                                                              ' remove them before fitting')
         assert df_visual_feature.index.name == 'movieId'
