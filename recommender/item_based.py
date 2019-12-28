@@ -1,4 +1,5 @@
 from scipy import sparse
+import numpy as np
 import pandas as pd
 from collections import namedtuple
 from sklearn.preprocessing.label import check_is_fitted
@@ -13,8 +14,11 @@ movie_rating_cols = [movieId_col, userId_col, rating_col]
 class ItemFeature(object):
     def __init__(self, item_ids: list, feature_names: list,
                  feature_matrix: sparse.csr_matrix):
-        self.item_ids = item_ids
-        self.feature_names = feature_names
+        assert isinstance(feature_matrix, sparse.csr_matrix), ('only sparse.csr_matrix can be accepted as '
+                                                               'feature matrix')
+        assert feature_matrix.shape == (len(item_ids), len(feature_names)), 'dimension mismatch'
+        self.item_ids = np.array(item_ids)
+        self.feature_names = np.array(feature_names)
         self.feature_matrix = feature_matrix
 
 
@@ -34,9 +38,14 @@ class ItemBasedColabCos(object):
         self.dict_user_ratings = dict(df_fit.apply(lambda row:
                                                    movie_rating(row[movieId_col], row[rating_col]), axis=1))
 
-    def predict(self, user_id, new_items):
+    def predict(self, user_id: int, new_items: ItemFeature) -> object:
         """for the given user_id give the predicted rates for new_items"""
         check_is_fitted(self, ['item_features', 'dict_user_ratings'])
+        assert (new_items.feature_names == self.item_features.feature_names).all(), ('The feature set in the '
+                                                                                     'new items is not '
+                                                                                     'identical with the '
+                                                                                     'feature set used for '
+                                                                                     'fitting')
         csr_user_matrix = self.get_user_matrix(user_id)
         l_user_ratings = self.dict_user_ratings.get(user_id)
         assert l_user_ratings is not None, 'user not found'
@@ -44,6 +53,21 @@ class ItemBasedColabCos(object):
         csr_similarities = csr_new_items_matrix.dot(csr_user_matrix.transpose())
         csr_similarities_weighted = sparse.diags(l_user_ratings).dot(csr_similarities)
         new_ratings = csr_similarities_weighted.sum(axis=1) / csr_similarities.sum(axis=1)
+        index = pd.Index(new_items.item_ids, name=movieId_col)
+        return pd.DataFrame({'rating': new_ratings}, index=index)
+
+    def get_user_matrix(self, user_id):
+        user_info = self.dict_user_ratings.get(user_id)
+        assert user_info is not None, f'user: {user_id} not found'
+        item_ids_rated_by_user = getattr(user_info, movieId_col)
+        item_ids_indices = np.array([np.where(self.item_features.item_ids == item)[0][0]
+                                     for item in item_ids_rated_by_user
+                                     if item in self.item_features.item_ids])
+        return self.item_features.feature_matrix[item_ids_indices, :]
+
+    @staticmethod
+    def get_items_matrix(new_items: ItemFeature):
+        return new_items.feature_matrix
 
     def items_to_feature_space(self, df) -> sparse.csr_matrix:
         pass
