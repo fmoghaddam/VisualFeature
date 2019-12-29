@@ -15,9 +15,11 @@ item_features_new = item_based.ItemFeature(item_ids=[8, 9, 10],
                                            feature_names=['f1', 'f2', 'f3', 'f4'],
                                            feature_matrix=csr_m2)
 
-item_based_colab_cos = item_based.ItemBasedColabCos()
 df_rating = pd.DataFrame([[1, 2, .3], [1, 4, 4.5]],
                          columns=[item_based.userId_col, item_based.movieId_col, item_based.rating_col])
+
+item_based_colab_cos = item_based.ItemBasedColabCos()
+
 item_based_colab_cos.fit(df_rating=df_rating,
                          item_features=item_features)
 

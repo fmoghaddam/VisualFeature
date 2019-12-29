@@ -12,18 +12,35 @@ movie_rating_cols = [movieId_col, userId_col, rating_col]
 
 
 class ItemFeature(object):
-    def __init__(self, item_ids: list, feature_names: list,
-                 feature_matrix: sparse.csr_matrix):
-        assert isinstance(feature_matrix, sparse.csr_matrix), ('only sparse.csr_matrix can be accepted as '
-                                                               'feature matrix')
+    def __init__(self, item_ids: list = None, feature_names: list = None,
+                 feature_matrix: sparse.csr_matrix = None):
+        if item_ids is not None:
+            self._initiate(item_ids, feature_names, feature_matrix)
+
+    def _initiate(self, item_ids: list, feature_names: list,
+                  feature_matrix: sparse.csr_matrix):
+        self._validate_input(item_ids, feature_names, feature_matrix)
+        self.item_ids = np.array(item_ids)
+        self.feature_names = np.array(feature_names)
+        self.feature_matrix = feature_matrix
+
+    def _validate_input(self, item_ids: list, feature_names: list,
+                        feature_matrix: sparse.csr_matrix):
+        if not isinstance(feature_matrix, sparse.csr_matrix):
+            raise TypeError('only sparse.csr_matrix can be accepted as feature matrix')
         assert feature_matrix.shape == (len(item_ids), len(feature_names)), ('dimension mismatch, '
                                                                              'feature_matrix does not have '
                                                                              'compatible shape comparing to '
                                                                              'number of items and number of '
                                                                              'features')
-        self.item_ids = np.array(item_ids)
-        self.feature_names = np.array(feature_names)
-        self.feature_matrix = feature_matrix
+        no_of_nulls_in_feature_matrix = pd.isnull(feature_matrix.data).sum()
+        if no_of_nulls_in_feature_matrix > 0:
+            raise ValueError(f'feature matrix contains {no_of_nulls_in_feature_matrix}'
+                             f' missing values. Do something about them first')
+
+    def from_dataframe(self, df: pd.DataFrame):
+        """df has movieId's as index and feature names as columns"""
+        self._initiate(df.index, df.columns, sparse.csr_matrix(df.values))
 
     def get_feature_matrix_by_list_of_items(self, some_item_ids):
         item_ids_indices = np.array([np.where(self.item_ids == item)[0][0]
@@ -50,8 +67,8 @@ class ItemBasedColabCos(object):
         if not isinstance(df_rating, pd.DataFrame):
             raise TypeError('Only pandas DataFrame are accepted as input for rating')
         if not isinstance(item_features, ItemFeature):
-            raise TypeError('new items has to be of type ItemFeature')
-        assert set(df_rating.columns).issubset(movie_rating_cols), ('df_rating has to have at least these '
+            raise TypeError(f'new items has to be of type ItemFeature. It is of type {type(item_features)}')
+        assert set(movie_rating_cols).issubset(df_rating.columns), ('df_rating has to have at least these '
                                                                     f'columns: {movie_rating_cols}')
 
     def predict(self, user_id: int, new_items: ItemFeature) -> pd.DataFrame:
@@ -90,8 +107,8 @@ class ItemBasedColabCos(object):
         csr_similarities = csr_new_items_matrix.dot(csr_user_matrix.transpose())
         csr_similarities_weighted = csr_similarities.dot(sparse.diags(l_user_ratings))
         new_ratings = csr_similarities_weighted.sum(axis=1) / csr_similarities.sum(axis=1)
-        new_ratings = np.array(new_ratings).ravel()
-        return new_ratings
+        new_ratings_flat = np.array(new_ratings).ravel()
+        return new_ratings_flat
 
     def items_to_feature_space(self, df) -> sparse.csr_matrix:
         pass
