@@ -5,49 +5,12 @@ from collections import namedtuple
 
 from lib import check_is_fitted
 
-movieId_col = 'movieId'
-userId_col = 'userId'
-rating_col = 'rating'
+
+movieId_col = config.movieId_col
+userId_col = config.userId_col
+rating_col = config.rating_col
 movie_rating_cols = [movieId_col, userId_col, rating_col]
-
-
-class ItemFeature(object):
-    def __init__(self, item_ids: list = None, feature_names: list = None,
-                 feature_matrix: sparse.csr_matrix = None):
-        if item_ids is not None:
-            self._initiate(item_ids, feature_names, feature_matrix)
-
-    def _initiate(self, item_ids: list, feature_names: list,
-                  feature_matrix: sparse.csr_matrix):
-        self._validate_input(item_ids, feature_names, feature_matrix)
-        self.item_ids = np.array(item_ids)
-        self.feature_names = np.array(feature_names)
-        self.feature_matrix = feature_matrix
-
-    def _validate_input(self, item_ids: list, feature_names: list,
-                        feature_matrix: sparse.csr_matrix):
-        if not isinstance(feature_matrix, sparse.csr_matrix):
-            raise TypeError('only sparse.csr_matrix can be accepted as feature matrix')
-        assert feature_matrix.shape == (len(item_ids), len(feature_names)), ('dimension mismatch, '
-                                                                             'feature_matrix does not have '
-                                                                             'compatible shape comparing to '
-                                                                             'number of items and number of '
-                                                                             'features')
-        no_of_nulls_in_feature_matrix = pd.isnull(feature_matrix.data).sum()
-        if no_of_nulls_in_feature_matrix > 0:
-            raise ValueError(f'feature matrix contains {no_of_nulls_in_feature_matrix}'
-                             f' missing values. Do something about them first')
-
-    def from_dataframe(self, df: pd.DataFrame):
-        """df has movieId's as index and feature names as columns"""
-        self._initiate(df.index, df.columns, sparse.csr_matrix(df.values))
-
-    def get_feature_matrix_by_list_of_items(self, some_item_ids):
-        item_ids_indices = np.array([np.where(self.item_ids == item)[0][0]
-                                     for item in some_item_ids
-                                     if item in self.item_ids])
-        return self.feature_matrix[item_ids_indices, :]
-
+movie_rating = namedtuple('movie_rating', f'{movieId_col} {rating_col}')
 
 class ItemBasedColabCos(object):
     def __init__(self):
@@ -57,11 +20,12 @@ class ItemBasedColabCos(object):
         """make a dictionary {user_id, (list of rated movies, np.array of respective rates)"""
         self._validate_fit_input(df_rating, item_features)
         self.item_features = item_features
-        movie_rating = namedtuple('movie_rating', f'{movieId_col} {rating_col}')
+
         df_fit = df_rating.groupby(userId_col).agg({movieId_col: lambda x: x.tolist(),
                                                     rating_col: lambda x: x.tolist()})
         self.dict_user_ratings = dict(df_fit.apply(lambda row:
                                                    movie_rating(row[movieId_col], row[rating_col]), axis=1))
+        return self
 
     def _validate_fit_input(self, df_rating: pd.DataFrame, item_features: ItemFeature):
         if not isinstance(df_rating, pd.DataFrame):

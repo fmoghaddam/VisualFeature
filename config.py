@@ -1,0 +1,6 @@
+movieId_col = 'movieId'
+userId_col = 'userId'
+rating_col = 'rating'
+tagId_col = 'tagId'
+relevance_col = 'relevance'
+visual_feature_col = 'visual_feature'

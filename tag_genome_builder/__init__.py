@@ -3,6 +3,11 @@ import sklearn.preprocessing as pp
 from scipy import sparse
 from sklearn.base import clone
 from lib import check_is_fitted
+import config
+movieId_col = config.movieId_col
+tagId_col = config.tagId_col
+relevance_col = config.relevance_col
+visual_feature_col = config.visual_feature_col
 
 
 class VisualFeatureToSparse(object):
@@ -14,14 +19,14 @@ class VisualFeatureToSparse(object):
         """the encoder_movieid has to be fitted"""
 
         check_is_fitted(encoder_movieid, 'classes_')
-        assert df_agg_normalized.index.name == 'movieId'
+        assert df_agg_normalized.index.name == movieId_col
 
-        df_agg_melted = pd.melt(df_agg_normalized.reset_index(), id_vars=['movieId'])
+        df_agg_melted = pd.melt(df_agg_normalized.reset_index(), id_vars=[movieId_col])
         if fit:
             self.encoder_visual_feature.fit(df_agg_melted['variable'])
 
         row_agg = self.encoder_visual_feature.transform(df_agg_melted['variable'])
-        column_agg = encoder_movieid.transform(df_agg_melted['movieId'])
+        column_agg = encoder_movieid.transform(df_agg_melted[movieId_col])
         data_agg = df_agg_melted['value']
         coo_agg = sparse.coo_matrix((data_agg, (row_agg, column_agg)))
         csr_agg = coo_agg.tocsr()
@@ -97,6 +102,19 @@ class Base(object):
         df_agg = self.filter_vf_to_tag(df_agg, df_genome_scores)
         return df_agg, df_genome_scores
 
+    @staticmethod
+    def get_top_n_tags(df_tag_genome: pd.DataFrame, n: int = 10,
+                       one_row_per_movie=False, sep='|') -> pd.DataFrame:
+        df_tag_genome.sort_values(relevance_col, ascending=False, inplace=True)
+
+        df_top_n_tags = df_tag_genome.groupby([movieId_col]).head(n).sort_values([movieId_col, tagId_col],
+                                                                                 ascending=False)
+        if one_row_per_movie:
+            df_top_n_tags =\
+                df_top_n_tags.groupby(config.movieId_col)[config.tagId_col].\
+                agg(lambda x: sep.join(x.astype(str)))
+        return pd.DataFrame(df_top_n_tags)
+
 
 class TagGenomeBuilder(Base):
     def __init__(self, normalizer_vf, df_agg, df_genome_scores):
@@ -104,7 +122,7 @@ class TagGenomeBuilder(Base):
             print('df_agg has missing values, need to take care of them before fitting')
         if df_genome_scores.isnull().sum().sum() > 0:
             print('df_genome_scores has missing values, need to take care of them before fitting')
-        assert df_agg.index.name == 'movieId'
+        assert df_agg.index.name == movieId_col
         self.encoder_movieid = pp.LabelEncoder()
         self.encoder_movieid.fit(df_agg.index)
         self.encoder_tagid = pp.LabelEncoder()
@@ -148,11 +166,11 @@ class TagGenomeBuilder(Base):
         genome_score_visual_features_coo = self.genome_score_visual_features.tocoo()
         df_genome_visual_feature = pd.DataFrame(
             {
-                'visual_feature':
+                visual_feature_col:
                     visual_feature_to_sparse.encoder_visual_feature.inverse_transform
                     (genome_score_visual_features_coo.row),
-                'tagId': self.encoder_tagid.inverse_transform(genome_score_visual_features_coo.col),
-                'relevance': genome_score_visual_features_coo.data
+                tagId_col: self.encoder_tagid.inverse_transform(genome_score_visual_features_coo.col),
+                relevance_col: genome_score_visual_features_coo.data
             }
         )
         df_genome_visual_feature.dropna(inplace=True)
@@ -171,7 +189,7 @@ class TagGenomeBuilder(Base):
         check_is_fitted(visual_feature_normalizer, 'normalizer')
         assert df_visual_feature.isnull().sum().sum() == 0, ('df_visual_feature has missing values. Impute or'
                                                              ' remove them before fitting')
-        assert df_visual_feature.index.name == 'movieId'
+        assert df_visual_feature.index.name == movieId_col
         assert df_visual_feature.columns.tolist() == self.l_visual_feature_names, ('different set of visual '
                                                                                    'features comparing fitted'
                                                                                    ' ones')
@@ -192,17 +210,9 @@ class TagGenomeBuilder(Base):
         coo_csr_tag_genome_vf = csr_tag_genome_vf.tocoo()
         df_tag_genome_vf = pd.DataFrame(
             {
-                'movieId': encoder_movie_id_transform.inverse_transform(coo_csr_tag_genome_vf.row),
-                'tagID': self.encoder_tagid.inverse_transform(coo_csr_tag_genome_vf.col),
-                'relevance': coo_csr_tag_genome_vf.data,
+                movieId_col: encoder_movie_id_transform.inverse_transform(coo_csr_tag_genome_vf.row),
+                tagId_col: self.encoder_tagid.inverse_transform(coo_csr_tag_genome_vf.col),
+                relevance_col: coo_csr_tag_genome_vf.data,
             }
         )
         return df_tag_genome_vf
-
-    @staticmethod
-    def get_to_n_tags(df_tag_genome_vf: pd.DataFrame, n: int = 10) -> pd.DataFrame:
-        df_tag_genome_vf.sort_values('relevance', ascending=False, inplace=True)
-
-        df_top_n_tags = df_tag_genome_vf.groupby(['movieId']).head(n).sort_values(['movieId', 'tagID'],
-                                                                                  ascending=False)
-        return df_top_n_tags
