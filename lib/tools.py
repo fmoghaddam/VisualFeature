@@ -1,10 +1,13 @@
 import numpy as np
+import pandas as pd
 from sklearn.metrics import confusion_matrix
 from sklearn.utils.multiclass import unique_labels
+from sklearn import metrics
 import matplotlib.pyplot as plt
 import time
 from IPython.display import clear_output
 
+import config
 
 def plot_confusion_matrix(y_true, y_pred, classes=None,
                           normalize=False,
@@ -105,6 +108,40 @@ def update_progress(progress, t0=None):
         text = "Progress: [{0}] {1:.1f}%, Elapsed time: {2:s}".format(
             "#" * block + "-" * (bar_length - block), progress * 100, to_time(t0))
     print(text)
+
+
+def drop_nulls(df):
+    return df.dropna(subset=[f'{config.rating_col}_predicted'])
+
+
+def performance_report(df_rating_pred, prediction_column_suffix=''):
+    if prediction_column_suffix != '':
+        prediction_column_suffix = '_' + prediction_column_suffix
+    mae = metrics.regression.mean_absolute_error(drop_nulls(df_rating_pred)[config.rating_col],
+                                                 drop_nulls(df_rating_pred)
+                                                 [f'{config.rating_col}_predicted{prediction_column_suffix}'])
+    mse = metrics.regression.mean_squared_error(drop_nulls(df_rating_pred)[config.rating_col],
+                                                drop_nulls(df_rating_pred)
+                                                [f'{config.rating_col}_predicted{prediction_column_suffix}'])
+    rmse = np.sqrt(mse)
+    r2 = metrics.regression.r2_score(drop_nulls(df_rating_pred)[config.rating_col],
+                                     drop_nulls(df_rating_pred)
+                                     [f'{config.rating_col}_predicted{prediction_column_suffix}'])
+    mean = df_rating_pred[config.rating_col].mean()
+    nrmse = rmse / mean
+    residual_std = df_rating_pred['residual' + prediction_column_suffix].std()
+    residual_mean = df_rating_pred['residual' + prediction_column_suffix].mean()
+
+    df_regression_report = pd.DataFrame({'Average Score': mean,
+                                         'MAE': mae,
+                                         'RMSE': rmse,
+                                         'NRMSE': nrmse,
+                                         'R2': r2,
+                                         'Std of residuals': residual_std,
+                                         'Avg of residuals': residual_mean
+                                         },
+                                        index=[prediction_column_suffix[1:]])
+    return df_regression_report
 
 # from multiprocessing import Pool
 # from tqdm import tqdm
