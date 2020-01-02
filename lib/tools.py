@@ -148,7 +148,7 @@ def performance_report(df_rating_pred, prediction_column_suffix=''):
 def plot_actual_vs_prediction(df_rating_pred, ax=None, prediction_column_suffix='',
                               figsize=(7, 7), title=None, **kwargs):
     if title is None:
-        title = 'Actual vs. predicted rating' + prediction_column_suffix
+        title = 'Actual vs. predicted rating ' + prediction_column_suffix
     if prediction_column_suffix != '':
         prediction_column_suffix = '_' + prediction_column_suffix
     fig, ax = _make_fig(ax, figsize)
@@ -163,7 +163,7 @@ def plot_actual_vs_prediction(df_rating_pred, ax=None, prediction_column_suffix=
 def plot_residual_plot(df_rating_pred, ax=None, prediction_column_suffix='',
                        figsize=(7, 7), title=None, **kwargs):
     if title is None:
-        title = 'Residual plot' + prediction_column_suffix
+        title = 'Residual plot ' + prediction_column_suffix
     if prediction_column_suffix != '':
         prediction_column_suffix = '_' + prediction_column_suffix
     fig, ax = _make_fig(ax, figsize)
@@ -178,12 +178,12 @@ def plot_residual_plot(df_rating_pred, ax=None, prediction_column_suffix='',
 def plot_residual_boxplot(df_rating_pred, ax=None, prediction_column_suffix='',
                           figsize=(7, 7), title=None, **kwargs):
     if title is None:
-        title = 'Distribution of residuals per rating' + prediction_column_suffix
+        title = 'Distribution of residuals per rating ' + prediction_column_suffix
     if prediction_column_suffix != '':
         prediction_column_suffix = '_' + prediction_column_suffix
     fig, ax = _make_fig(ax, figsize)
     sns.boxplot(x=config.rating_col, y=f'residual{prediction_column_suffix}',
-                data=df_rating_pred, ax=ax)
+                data=df_rating_pred, ax=ax, **kwargs)
     ax.set_title(title)
     return ax
 
@@ -191,25 +191,25 @@ def plot_residual_boxplot(df_rating_pred, ax=None, prediction_column_suffix='',
 def plot_absolute_residual_boxplot(df_rating_pred, ax=None, prediction_column_suffix='',
                                    figsize=(7, 7), title=None, **kwargs):
     if title is None:
-        title = 'Distribution of absolute residuals per rating' + prediction_column_suffix
+        title = 'Distribution of absolute residuals per rating ' + prediction_column_suffix
     if prediction_column_suffix != '':
         prediction_column_suffix = '_' + prediction_column_suffix
     fig, ax = _make_fig(ax, figsize)
     sns.boxplot(x=config.rating_col, y=f'absolute residual{prediction_column_suffix}',
-                data=df_rating_pred, ax=ax)
+                data=df_rating_pred, ax=ax, **kwargs)
     ax.set_title(title)
     return ax
 
 
 def plot_actual_vs_predicted_boxplot(df_rating_pred, ax=None, prediction_column_suffix='',
-                                   figsize=(7, 7), title=None, **kwargs):
+                                     figsize=(7, 7), title=None, **kwargs):
     if title is None:
-        title = 'Distribution of predictions per rating' + prediction_column_suffix
+        title = 'Distribution of predictions per rating ' + prediction_column_suffix
     if prediction_column_suffix != '':
         prediction_column_suffix = '_' + prediction_column_suffix
     fig, ax = _make_fig(ax, figsize)
     sns.boxplot(x=config.rating_col, y=f'{config.rating_col}_predicted{prediction_column_suffix}',
-                data=df_rating_pred, ax=ax)
+                data=df_rating_pred, ax=ax, **kwargs)
     ax.set_title(title)
     return ax
 
@@ -217,12 +217,12 @@ def plot_actual_vs_predicted_boxplot(df_rating_pred, ax=None, prediction_column_
 def plot_actual_vs_predicted_violinplot(df_rating_pred, ax=None, prediction_column_suffix='',
                                         figsize=(7, 7), title=None, **kwargs):
     if title is None:
-        title = 'Distribution of predictions per rating' + prediction_column_suffix
+        title = 'Distribution of predictions per rating ' + prediction_column_suffix
     if prediction_column_suffix != '':
         prediction_column_suffix = '_' + prediction_column_suffix
     fig, ax = _make_fig(ax, figsize)
     sns.violinplot(x=config.rating_col, y=f'{config.rating_col}_predicted{prediction_column_suffix}',
-                   data=df_rating_pred, ax=ax)
+                   data=df_rating_pred, ax=ax, **kwargs)
     ax.set_title(title)
     return ax
 
@@ -233,6 +233,23 @@ def _make_fig(ax, figsize):
         return fig, ax
     else:
         return None, ax
+
+
+def plot_side_by_side(plotter, df_rating_pred, prediction_column_suffixes: list,
+                      figsize=None, title='', **kwargs):
+    n_rows = len(prediction_column_suffixes) // 2 + (len(prediction_column_suffixes) % 2)
+    if figsize is None:
+        figsize = (14, 5 * n_rows)
+    fig, axes = plt.subplots(n_rows, 2, figsize=figsize, sharey='all')
+    for prediction_column_suffix, ax in zip(prediction_column_suffixes, axes.ravel()):
+        plotter(df_rating_pred,
+                prediction_column_suffix=prediction_column_suffix,
+                ax=ax,
+                **kwargs)
+    fig.tight_layout()
+    fig.suptitle(title)
+    return fig
+
 # from multiprocessing import Pool
 # from tqdm import tqdm
 # import functools
