@@ -2,7 +2,6 @@ import sklearn.model_selection as ms
 import recommender.item_based as settings  # FIXME change it later to config
 from recommender import base
 import pandas as pd
-import config
 
 
 def my_train_test_split(df_rating: pd.DataFrame,

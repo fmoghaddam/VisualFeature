@@ -105,3 +105,27 @@ def update_progress(progress, t0=None):
         text = "Progress: [{0}] {1:.1f}%, Elapsed time: {2:s}".format(
             "#" * block + "-" * (bar_length - block), progress * 100, to_time(t0))
     print(text)
+
+# from multiprocessing import Pool
+# from tqdm import tqdm
+# import functools
+#
+#
+#
+# def do_work(pbar, x):
+#     # do something with x
+#     time.sleep(.1)
+#     pbar.update(1)
+#     return x
+#
+#
+# def m():
+#     tasks = range(5)
+#     pbar = tqdm(total=len(tasks))
+#     pool = Pool()
+#     _do_work = functools.partial(do_work, pbar)
+#     a = pool.map(_do_work, tasks)
+#     pool.close()
+#     b = pool.join()
+#     pbar.close()
+#     return a, b

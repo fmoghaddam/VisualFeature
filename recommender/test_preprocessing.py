@@ -11,4 +11,3 @@ def test_get_item_feature_from_tag_genome():
     expected_items_ids = np.array([1])
     expected_feature_names = np.array(['186', '204', '244', '536', '588', '589', '63', '64', '785', '786'])
     expected_feature_matrix_array = np.array([[1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])
-

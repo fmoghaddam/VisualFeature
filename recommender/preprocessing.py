@@ -17,4 +17,3 @@ def get_item_feature_from_tag_genome(df_genome, number_of_tag_per_movie):
                                 feature_names=feature_names,
                                 feature_matrix=feature_matrix)
     return item_features
-
