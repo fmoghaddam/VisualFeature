@@ -10,6 +10,7 @@ from IPython.display import clear_output
 
 import config
 
+
 def plot_confusion_matrix(y_true, y_pred, classes=None,
                           normalize=False,
                           title=None,
