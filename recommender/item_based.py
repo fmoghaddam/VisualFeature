@@ -3,7 +3,9 @@ import numpy as np
 import pandas as pd
 from collections import namedtuple
 
-from lib import check_is_fitted
+from .base import ItemFeature
+from lib import check_is_fitted, tools
+import config
 
 
 movieId_col = config.movieId_col

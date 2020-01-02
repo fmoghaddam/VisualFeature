@@ -2,16 +2,17 @@ import numpy as np
 import pandas as pd
 from scipy import sparse
 from recommender import item_based
+from recommender import base
 
 m = np.array([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16]])
 csr_m = sparse.csr_matrix(m)
-item_features = item_based.ItemFeature(item_ids=[1, 2, 3, 4],
+item_features = base.ItemFeature(item_ids=[1, 2, 3, 4],
                                        feature_names=['f1', 'f2', 'f3', 'f4'],
                                        feature_matrix=csr_m)
 
 m2 = np.array([[1.5, 2.5, 3.5, 4.5], [5.5, 6.5, 7.5, 8.5], [9.5, 10.5, 11.5, 12.5]])
 csr_m2 = sparse.csr_matrix(m2)
-item_features_new = item_based.ItemFeature(item_ids=[8, 9, 10],
+item_features_new = base.ItemFeature(item_ids=[8, 9, 10],
                                            feature_names=['f1', 'f2', 'f3', 'f4'],
                                            feature_matrix=csr_m2)
 
