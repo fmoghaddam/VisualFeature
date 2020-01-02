@@ -69,7 +69,7 @@ class ItemBasedColabCos(object):
 
     def _prepare_prediction_output(self, new_items: ItemFeature, new_ratings: np.array) -> pd.DataFrame:
         index = pd.Index(new_items.item_ids, name=movieId_col)
-        predicted_ratings_with_item_id_for_user_id = pd.DataFrame({rating_col: new_ratings}, index=index)
+        predicted_ratings_with_item_id_for_user_id = pd.DataFrame({f'{rating_col}_predicted': new_ratings}, index=index)
         return predicted_ratings_with_item_id_for_user_id
 
     def get_new_ratings(self, csr_new_items_matrix, csr_user_matrix, l_user_ratings):
@@ -124,7 +124,7 @@ class ItemBasedColabCos(object):
         new_items = item_features.get_item_feature_by_list_of_items(_movie_ids)
         _pred = self.predict(user, new_items)
         _pred[config.userId_col] = user
-        return _pred.reset_index()[[config.userId_col, config.movieId_col, config.rating_col]]
+        return _pred.reset_index()[[config.userId_col, config.movieId_col, f'{config.rating_col}_predicted']]
 
     def items_to_feature_space(self, df) -> sparse.csr_matrix:
         pass
