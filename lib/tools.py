@@ -4,6 +4,7 @@ from sklearn.metrics import confusion_matrix
 from sklearn.utils.multiclass import unique_labels
 from sklearn import metrics
 import matplotlib.pyplot as plt
+import seaborn as sns
 import time
 from IPython.display import clear_output
 
@@ -143,6 +144,95 @@ def performance_report(df_rating_pred, prediction_column_suffix=''):
                                         index=[prediction_column_suffix[1:]])
     return df_regression_report
 
+
+def plot_actual_vs_prediction(df_rating_pred, ax=None, prediction_column_suffix='',
+                              figsize=(7, 7), title=None, **kwargs):
+    if title is None:
+        title = 'Actual vs. predicted rating' + prediction_column_suffix
+    if prediction_column_suffix != '':
+        prediction_column_suffix = '_' + prediction_column_suffix
+    fig, ax = _make_fig(ax, figsize)
+    df_rating_pred.plot.scatter(x=config.rating_col,
+                                y=f'{config.rating_col}_predicted{prediction_column_suffix}',
+                                ax=ax, **kwargs)
+    ax.plot([0, 5], [0, 5], color='g')
+    ax.set_title(title)
+    return ax
+
+
+def plot_residual_plot(df_rating_pred, ax=None, prediction_column_suffix='',
+                       figsize=(7, 7), title=None, **kwargs):
+    if title is None:
+        title = 'Residual plot' + prediction_column_suffix
+    if prediction_column_suffix != '':
+        prediction_column_suffix = '_' + prediction_column_suffix
+    fig, ax = _make_fig(ax, figsize)
+    df_rating_pred.plot.scatter(x=config.rating_col,
+                                y=f'residual{prediction_column_suffix}',
+                                ax=ax, **kwargs)
+    ax.axhline(0, color='g')
+    ax.set_title(title)
+    return ax
+
+
+def plot_residual_boxplot(df_rating_pred, ax=None, prediction_column_suffix='',
+                          figsize=(7, 7), title=None, **kwargs):
+    if title is None:
+        title = 'Distribution of residuals per rating' + prediction_column_suffix
+    if prediction_column_suffix != '':
+        prediction_column_suffix = '_' + prediction_column_suffix
+    fig, ax = _make_fig(ax, figsize)
+    sns.boxplot(x=config.rating_col, y=f'residual{prediction_column_suffix}',
+                data=df_rating_pred, ax=ax)
+    ax.set_title(title)
+    return ax
+
+
+def plot_absolute_residual_boxplot(df_rating_pred, ax=None, prediction_column_suffix='',
+                                   figsize=(7, 7), title=None, **kwargs):
+    if title is None:
+        title = 'Distribution of absolute residuals per rating' + prediction_column_suffix
+    if prediction_column_suffix != '':
+        prediction_column_suffix = '_' + prediction_column_suffix
+    fig, ax = _make_fig(ax, figsize)
+    sns.boxplot(x=config.rating_col, y=f'absolute residual{prediction_column_suffix}',
+                data=df_rating_pred, ax=ax)
+    ax.set_title(title)
+    return ax
+
+
+def plot_actual_vs_predicted_boxplot(df_rating_pred, ax=None, prediction_column_suffix='',
+                                   figsize=(7, 7), title=None, **kwargs):
+    if title is None:
+        title = 'Distribution of predictions per rating' + prediction_column_suffix
+    if prediction_column_suffix != '':
+        prediction_column_suffix = '_' + prediction_column_suffix
+    fig, ax = _make_fig(ax, figsize)
+    sns.boxplot(x=config.rating_col, y=f'{config.rating_col}_predicted{prediction_column_suffix}',
+                data=df_rating_pred, ax=ax)
+    ax.set_title(title)
+    return ax
+
+
+def plot_actual_vs_predicted_violinplot(df_rating_pred, ax=None, prediction_column_suffix='',
+                                        figsize=(7, 7), title=None, **kwargs):
+    if title is None:
+        title = 'Distribution of predictions per rating' + prediction_column_suffix
+    if prediction_column_suffix != '':
+        prediction_column_suffix = '_' + prediction_column_suffix
+    fig, ax = _make_fig(ax, figsize)
+    sns.violinplot(x=config.rating_col, y=f'{config.rating_col}_predicted{prediction_column_suffix}',
+                   data=df_rating_pred, ax=ax)
+    ax.set_title(title)
+    return ax
+
+
+def _make_fig(ax, figsize):
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)
+        return fig, ax
+    else:
+        return None, ax
 # from multiprocessing import Pool
 # from tqdm import tqdm
 # import functools
