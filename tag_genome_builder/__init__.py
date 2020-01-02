@@ -178,7 +178,7 @@ class TagGenomeBuilder(Base):
             df_genome_visual_feature.to_csv(path_to_write)
         return df_genome_visual_feature
 
-    def transform(self, df_visual_feature: pd.DataFrame, output_df: bool = False):
+    def predict(self, df_visual_feature: pd.DataFrame, output_df: bool = False):
         """
         Compute the relevance to tags using visual features of new movies and the matrix computed in fit
         :param df_visual_feature: dataframe of aggregated visual features with movieId as index
