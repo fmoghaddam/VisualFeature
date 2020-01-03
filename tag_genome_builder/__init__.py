@@ -133,7 +133,6 @@ class TagGenomeBuilder(Base):
         """
         :param df_genome_score: can be the total dataset, will be filtered according to df_visual_feature
         :param df_visual_feature: only included train data (movies has to be splitted)
-        :return  sparse matrix of tag genome
         """
         assert df_visual_feature.isnull().sum().sum() == 0, ('df_visual_feature has missing values. Impute or'
                                                              ' remove them before fitting')
@@ -155,7 +154,7 @@ class TagGenomeBuilder(Base):
         assert csr_agg.shape[1] == csr_genome.shape[0], (f'shapes of matrices are not compatible for dot '
                                                          f'product {csr_agg.shape} and {csr_genome.shape}')
         self.genome_score_visual_features = csr_agg.dot(csr_genome)
-        return self.genome_score_visual_features
+        return self
 
     def output_vf_genome_matrix_to_df(self, path_to_write: str = None) -> pd.DataFrame:
         """
