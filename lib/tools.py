@@ -113,7 +113,8 @@ def update_progress(progress, t0=None):
 
 
 def drop_nulls(df):
-    return df.dropna(subset=[f'{config.rating_col}_predicted'])
+    subset = df.filter(regex='_predicted').columns
+    return df.dropna(subset=subset)
 
 
 def performance_report(df_rating_pred, prediction_column_suffix=''):
