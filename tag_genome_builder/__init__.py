@@ -89,12 +89,16 @@ class Base(object):
 
     @staticmethod
     def filter_vf_to_tag(df_agg, df_genome_scores):
-        df_agg = df_agg[df_agg.index.isin(df_genome_scores.movieId)]
+        if df_agg.index.name != config.movieId_col:
+            raise NameError(f'Index of the VF dataframe has to be {config.movieId_col}')
+        df_agg = df_agg[df_agg.index.isin(df_genome_scores[config.movieId_col])]
         return df_agg
 
     @staticmethod
     def filter_tag_to_vf(df_agg, df_genome_scores):
-        df_genome_scores = df_genome_scores[df_genome_scores.movieId.isin(df_agg.index)]
+        if df_agg.index.name != config.movieId_col:
+            raise NameError(f'Index of the VF dataframe has to be {config.movieId_col}')
+        df_genome_scores = df_genome_scores[df_genome_scores[config.movieId_col].isin(df_agg.index)]
         return df_genome_scores
 
     def filter_tag_and_vf_to_same(self, df_agg, df_genome_scores):
