@@ -51,7 +51,7 @@ class ItemBasedColabCos(base.BaseRecommender):
     def get_new_ratings(self, csr_new_items_matrix, csr_user_matrix, l_user_ratings):
         csr_similarities = csr_new_items_matrix.dot(csr_user_matrix.transpose())
         csr_similarities_weighted = csr_similarities.dot(sparse.diags(l_user_ratings))
-        new_ratings = csr_similarities_weighted.sum(axis=1) / csr_similarities.sum(axis=1)
+        new_ratings = csr_similarities_weighted.sum(axis=1) / abs(csr_similarities).sum(axis=1)
         new_ratings_flat = np.array(new_ratings).ravel()
         return new_ratings_flat
 
