@@ -147,6 +147,19 @@ def performance_report(df_rating_pred, prediction_column_suffix=''):
     return df_regression_report
 
 
+def plot_prediction_histogram(df_rating_pred, ax=None, prediction_column_suffix='',
+                              figsize=(7, 7), title=None, **kwargs):
+    if title is None:
+        title = 'Prediction distribution ' + prediction_column_suffix
+    if prediction_column_suffix != '':
+        prediction_column_suffix = '_' + prediction_column_suffix
+    fig, ax = _make_fig(ax, figsize)
+    df_rating_pred[[f'{config.rating_col}_predicted{prediction_column_suffix}']].plot.hist(ax=ax, **kwargs)
+    ax.plot([0, 5], [0, 5], color='g')
+    ax.set_title(title)
+    return ax
+
+
 def plot_actual_vs_prediction(df_rating_pred, ax=None, prediction_column_suffix='',
                               figsize=(7, 7), title=None, **kwargs):
     if title is None:
