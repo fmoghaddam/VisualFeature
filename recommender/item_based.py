@@ -56,9 +56,36 @@ class ItemBasedColabCos(base.BaseRecommender):
         new_ratings_flat = np.array(new_ratings).ravel()
         return new_ratings_flat
 
-    def predict_on_list_of_users_vectorize(self, users, new_items, n_jobs=1):
+    def predict_on_list_of_users_vectorize(self, users, new_items):
+        # self._validate_predict_input(users, new_items)
 
-        return
+        csr_new_items_matrix = self.get_items_matrix(new_items)
+        csr_user_matrix = self.get_user_matrix(users)
+        l_user_ratings = self.get_user_ratings(users)
+        l_repeated_users = self.get_user_ids_repeated(users)
+        new_ratings = self.get_new_ratings_list(csr_new_items_matrix, csr_user_matrix, l_user_ratings,
+                                                l_repeated_users, new_items)
+        return new_ratings
+
+    def get_user_ids_repeated(self, user_id):
+        return self.df_rating.loc[self.df_rating[config.userId_col].isin(user_id), config.userId_col].values
+
+    def get_new_ratings_list(self, csr_new_items_matrix, csr_user_matrix, l_user_ratings,
+                             l_repeated_users, new_items):
+        similarities = metrics.pairwise.cosine_similarity(csr_user_matrix, csr_new_items_matrix,
+                                                          dense_output=True)
+        similarities_weighted = np.diag(l_user_ratings).dot(similarities)
+        user_summed_similarities = pd.DataFrame(similarities, columns=new_items.item_ids).groupby(
+            l_repeated_users).agg('sum')
+        user_summed_similarities_weighted = pd.DataFrame(similarities_weighted,
+                                                         columns=new_items.item_ids).groupby(
+            l_repeated_users).agg('sum')
+        new_ratings = user_summed_similarities_weighted / user_summed_similarities.abs()
+        new_ratings.index.name = config.userId_col
+        # df_new_ratings = pd.melt(new_ratings.reset_index(), id_vars=[config.userId_col],
+        #                          var_name=config.movieId_col,
+        #                          value_name=f'{config.rating_col}_predicted')
+        return new_ratings
 
     def items_to_feature_space(self, df) -> sparse.csr_matrix:
         pass
