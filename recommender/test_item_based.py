@@ -60,7 +60,8 @@ def test_get_new_ratings():
 
 def test_predict():
     index = pd.Index([8, 9, 10], name=item_based.movieId_col)
-    expected = pd.DataFrame({item_based.rating_col: np.array([3.16946565, 3.18662207, 3.19143469])},
+    expected = pd.DataFrame({f'{item_based.rating_col}_predicted':
+                            np.array([3.16946565, 3.18662207, 3.19143469])},
                             index=index)
     actual = item_based_colab_cos.predict(1, item_features_new)
     assert expected.columns == actual.columns
