@@ -130,7 +130,7 @@ def performance_report(df_rating_pred, prediction_column_suffix=''):
     r2 = metrics.regression.r2_score(drop_nulls(df_rating_pred)[config.rating_col],
                                      drop_nulls(df_rating_pred)
                                      [f'{config.rating_col}_predicted{prediction_column_suffix}'])
-    mean = df_rating_pred[config.rating_col].mean()
+    mean = drop_nulls(df_rating_pred)[config.rating_col].mean()
     nrmse = rmse / mean
     residual_std = df_rating_pred['residual' + prediction_column_suffix].std()
     residual_mean = df_rating_pred['residual' + prediction_column_suffix].mean()
@@ -155,7 +155,6 @@ def plot_prediction_histogram(df_rating_pred, ax=None, prediction_column_suffix=
         prediction_column_suffix = '_' + prediction_column_suffix
     fig, ax = _make_fig(ax, figsize)
     df_rating_pred[[f'{config.rating_col}_predicted{prediction_column_suffix}']].plot.hist(ax=ax, **kwargs)
-    ax.plot([0, 5], [0, 5], color='g')
     ax.set_title(title)
     return ax
 
@@ -170,7 +169,9 @@ def plot_actual_vs_prediction(df_rating_pred, ax=None, prediction_column_suffix=
     df_rating_pred.plot.scatter(x=config.rating_col,
                                 y=f'{config.rating_col}_predicted{prediction_column_suffix}',
                                 ax=ax, **kwargs)
-    ax.plot([0, 5], [0, 5], color='g')
+    minimum_rate = df_rating_pred[config.rating_col].min()
+    maximum_rate = df_rating_pred[config.rating_col].max()
+    ax.plot([minimum_rate, maximum_rate], [minimum_rate, maximum_rate], color='g')
     ax.set_title(title)
     return ax
 
