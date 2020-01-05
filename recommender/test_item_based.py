@@ -16,7 +16,7 @@ item_features_new = base.ItemFeature(item_ids=[8, 9, 10],
                                      feature_names=['f1', 'f2', 'f3', 'f4'],
                                      feature_matrix=csr_m2)
 
-df_rating = pd.DataFrame([[1, 2, .3], [1, 4, 4.5]],
+df_rating = pd.DataFrame([[1, 2, .3], [1, 4, 4.5], [2, 3, 5]],
                          columns=[item_based.userId_col, item_based.movieId_col, item_based.rating_col])
 
 item_based_colab_cos = item_based.ItemBasedColabCos()
@@ -26,15 +26,23 @@ item_based_colab_cos.fit(df_rating=df_rating,
 
 
 def test_fit_dict_user_ratings():
-    expected = {1: ([2, 4], [.3, 4.5])}
+    expected = {1: 2, 2: 1}
     actual = item_based_colab_cos.dict_user_ratings
     assert actual == expected
 
 
 def test_get_user_matrix():
     expected = np.array([[5, 6, 7, 8], [13, 14, 15, 16]])
-    user_info = item_based_colab_cos.dict_user_ratings.get(1)
-    actual = item_based_colab_cos.get_user_matrix(user_info).toarray()
+    user_id = [1]
+    actual = item_based_colab_cos.get_user_matrix(user_id).toarray()
+    assert len(actual) == len(expected)
+    assert (actual == expected).all()
+
+
+def test_get_user_ratings():
+    expected = np.array([.3, 4.5])
+    user_id = [1]
+    actual = item_based_colab_cos.get_user_ratings(user_id)
     assert len(actual) == len(expected)
     assert (actual == expected).all()
 
