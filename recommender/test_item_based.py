@@ -52,7 +52,7 @@ def test_get_new_ratings():
     user_matrix = np.array([[5, 6, 7, 8], [13, 14, 15, 16]])
     csr_user_matrix = sparse.csr_matrix(user_matrix)
     l_user_ratings = [.3, 4.5]
-    expected = np.array([3.16946565, 3.18662207, 3.19143469])
+    expected = np.array([2.376704781832865, 2.396590198814686, 2.4021938974156347])
     actual = item_based_colab_cos.get_new_ratings(csr_new_items_matrix, csr_user_matrix, l_user_ratings)
     assert len(actual) == len(expected)
     assert np.allclose(actual, expected, 1e-5)
@@ -61,7 +61,7 @@ def test_get_new_ratings():
 def test_predict():
     index = pd.Index([8, 9, 10], name=item_based.movieId_col)
     expected = pd.DataFrame({f'{item_based.rating_col}_predicted':
-                            np.array([3.16946565, 3.18662207, 3.19143469])},
+                            np.array([2.376704781832865, 2.396590198814686, 2.4021938974156347])},
                             index=index)
     actual = item_based_colab_cos.predict(1, item_features_new)
     assert expected.columns == actual.columns
