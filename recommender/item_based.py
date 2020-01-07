@@ -23,6 +23,51 @@ class ItemBasedColabCos(base.BaseRecommender):
         """make a dictionary {user_id, (list of rated movies, np.array of respective rates)"""
         self._validate_fit_input(df_rating, item_features)
         self.item_features = item_features
+
+        df_fit = df_rating.groupby(userId_col).agg({movieId_col: lambda x: x.tolist(),
+                                                    rating_col: lambda x: x.tolist()})
+        self.dict_user_ratings = dict(df_fit.apply(lambda row:
+                                                   movie_rating(row[movieId_col], row[rating_col]), axis=1))
+        return self
+
+    def predict(self, user_id: int, new_items: ItemFeature) -> pd.DataFrame:
+        """for the given user_id give the predicted rates for new_items"""
+        self._validate_predict_input(user_id, new_items)
+
+        csr_new_items_matrix = self.get_items_matrix(new_items)
+        user_info = self.dict_user_ratings.get(user_id)
+        csr_user_matrix = self.get_user_matrix(user_info)
+        l_user_ratings = getattr(user_info, rating_col)
+        new_ratings = self.get_new_ratings(csr_new_items_matrix, csr_user_matrix, l_user_ratings)
+        return self._prepare_prediction_output(new_items, new_ratings)
+
+    def get_user_matrix(self, user_info):
+        item_ids_rated_by_user = getattr(user_info, movieId_col)
+        return self.item_features.get_feature_matrix_by_list_of_items(item_ids_rated_by_user)
+
+    def get_items_matrix(self, new_items: ItemFeature):
+        return new_items.feature_matrix
+
+    def get_new_ratings(self, csr_new_items_matrix, csr_user_matrix, l_user_ratings):
+        similarities = metrics.pairwise.cosine_similarity(csr_new_items_matrix, csr_user_matrix,
+                                                          dense_output=True)
+        similarities_weighted = similarities.dot(np.diag(l_user_ratings))
+        new_ratings = similarities_weighted.sum(axis=1) / abs(similarities).sum(axis=1)
+        new_ratings_flat = np.array(new_ratings).ravel()
+        return new_ratings_flat
+
+    def items_to_feature_space(self, df) -> sparse.csr_matrix:
+        pass
+
+
+class ItemBasedColabCos2(base.BaseRecommender):
+    def __init__(self):
+        pass
+
+    def fit(self, df_rating: pd.DataFrame, item_features: ItemFeature):
+        """make a dictionary {user_id, (list of rated movies, np.array of respective rates)"""
+        self._validate_fit_input(df_rating, item_features)
+        self.item_features = item_features
         self.df_rating = df_rating[movie_rating_cols]
         self.dict_user_ratings = dict(df_rating[config.userId_col].value_counts())
         return self
