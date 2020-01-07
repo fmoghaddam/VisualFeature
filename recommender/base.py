@@ -59,8 +59,15 @@ class ItemFeature(object):
                            feature_names=self.feature_names,
                            feature_matrix=self.get_feature_matrix_by_list_of_items(some_item_ids))
 
+    def to_dataframe(self):
+        df = pd.DataFrame(self.feature_matrix.toarray(),
+                          index=self.item_ids,
+                          columns=self.feature_names)
+        df.index.name = config.movieId_col
+        return df
 
-class BaseRecommender():
+
+class BaseRecommender(object):
 
     def _validate_fit_input(self, df_rating: pd.DataFrame, item_features: ItemFeature):
         if not isinstance(df_rating, pd.DataFrame):
