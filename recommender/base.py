@@ -3,6 +3,8 @@ import numpy as np
 import pandas as pd
 import multiprocessing
 import functools
+from tqdm import tqdm_notebook as tqdm
+
 import time
 from lib import check_is_fitted, tools
 import config
@@ -107,21 +109,25 @@ class BaseRecommender(object):
     def predict_on_list_of_users_single_job(self, users, df_rating_test, item_features):
         l_preds = []
         t0 = time.time()
-        for i, user in enumerate(users):
-            if i % (len(users) // 50) == 0:
-                tools.update_progress(i / len(users), t0)
+        for i, user in tqdm(enumerate(users), total=len(users)):
+            # if i % (len(users) // 50) == 0:
+            #     tools.update_progress(i / len(users), t0)
             _pred = self._loop(df_rating_test, item_features, user)
             l_preds.append(_pred)
         output = pd.concat(l_preds, ignore_index=True)
         return output
 
     def predict_on_list_of_users_parallel(self, users, df_rating_test, item_features, n_jobs):
+        number_of_all_users = len(users)
         loop = functools.partial(self._loop, df_rating_test, item_features)
         if n_jobs < 0:
             n_jobs = multiprocessing.cpu_count() + n_jobs + 1
         pool = multiprocessing.Pool(n_jobs)
+        l_preds = []
         try:
-            l_preds = pool.map(loop, users)
+            for pred in tqdm(pool.imap(loop, users), total=number_of_all_users):
+                l_preds.append(pred)
+            # l_preds = pool.map(loop, users)
         except Exception as e:
             print(e)
             l_preds = [pd.DataFrame()]

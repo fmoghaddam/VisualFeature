@@ -3,6 +3,7 @@ import sklearn.model_selection as ms
 from tag_genome_builder import TagGenomeBuilder
 import functools
 import multiprocessing
+from tqdm import tqdm_notebook as tqdm
 
 
 def loop(estimator, df_visual_features, df_genome_scores, splits):
@@ -21,8 +22,8 @@ def cross_val_predict(df_visual_features, df_genome_scores, normalizer_vf, n_spl
     tag_genome_builder = TagGenomeBuilder(df_agg=df_visual_features,
                                           df_genome_scores=df_genome_scores,
                                           normalizer_vf=normalizer_vf)
+    l_tag_genome_vfs = []
     if n_jobs == 1:
-        l_tag_genome_vfs = []
         for splits in folds.split(df_visual_features.index):
             l_tag_genome_vfs.append(loop(tag_genome_builder, df_visual_features, df_genome_scores, splits))
             print('.', end=' ')
@@ -32,5 +33,8 @@ def cross_val_predict(df_visual_features, df_genome_scores, normalizer_vf, n_spl
             assert n_jobs > -multiprocessing.cpu_count(), 'too small negative n_jobs'
             n_jobs = multiprocessing.cpu_count() + n_jobs
         pool = multiprocessing.Pool(n_jobs)
-        l_tag_genome_vfs = pool.map(_loop, folds.split(df_visual_features.index))
+        for tag_genome in tqdm(pool.imap(_loop, folds.split(df_visual_features.index)), total=n_splits):
+            l_tag_genome_vfs.append(tag_genome)
+        # l_tag_genome_vfs = pool.map(_loop, folds.split(df_visual_features.index))
+        pool.close()
     return pd.concat(l_tag_genome_vfs, ignore_index=True)
