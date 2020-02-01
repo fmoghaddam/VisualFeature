@@ -53,7 +53,21 @@ def test_get_new_ratings():
     csr_user_matrix = sparse.csr_matrix(user_matrix)
     l_user_ratings = [.3, 4.5]
     expected = np.array([2.376704781832865, 2.396590198814686, 2.4021938974156347])
-    actual = item_based_colab_cos.get_new_ratings(csr_new_items_matrix, csr_user_matrix, l_user_ratings)
+    actual = item_based_colab_cos.get_new_ratings(csr_new_items_matrix, csr_user_matrix, l_user_ratings,
+                                                  min_similarity=0)
+    assert len(actual) == len(expected)
+    assert np.allclose(actual, expected, 1e-5)
+
+
+def test_get_new_ratings_min_similarity():
+    new_items_matrix = np.array([[1.5, 2.5, 3.5, 4.5], [5.5, 6.5, 7.5, 8.5], [9.5, 10.5, 11.5, 12.5]])
+    csr_new_items_matrix = sparse.csr_matrix(new_items_matrix)
+    user_matrix = np.array([[5, 6, 7, 8], [13, 14, 15, 16]])
+    csr_user_matrix = sparse.csr_matrix(user_matrix)
+    l_user_ratings = [.3, 4.5]
+    expected = np.array([0, 2.396590198814686, 2.4021938974156347])
+    actual = item_based_colab_cos.get_new_ratings(csr_new_items_matrix, csr_user_matrix, l_user_ratings,
+                                                  min_similarity=.99)
     assert len(actual) == len(expected)
     assert np.allclose(actual, expected, 1e-5)
 
@@ -63,7 +77,7 @@ def test_predict():
     expected = pd.DataFrame({f'{item_based.rating_col}_predicted':
                             np.array([2.376704781832865, 2.396590198814686, 2.4021938974156347])},
                             index=index)
-    actual = item_based_colab_cos.predict(1, item_features_new)
+    actual = item_based_colab_cos.predict(1, item_features_new, min_similarity=0)
     assert expected.columns == actual.columns
     assert expected.shape == actual.shape
     assert np.allclose(expected.values, actual.values, 1e-5)

@@ -17,6 +17,8 @@ movie_rating = namedtuple('movie_rating', f'{movieId_col} {rating_col}')
 
 class ItemBasedColabCos(base.BaseRecommender):
     def __init__(self):
+        self.dict_sat_to_zero = {}
+        self.dict_similarity_dist = {}
         pass
 
     def fit(self, df_rating: pd.DataFrame, item_features: ItemFeature):
@@ -30,7 +32,7 @@ class ItemBasedColabCos(base.BaseRecommender):
                                                    movie_rating(row[movieId_col], row[rating_col]), axis=1))
         return self
 
-    def predict(self, user_id: int, new_items: ItemFeature) -> pd.DataFrame:
+    def predict(self, user_id: int, new_items: ItemFeature, min_similarity: float) -> pd.DataFrame:
         """for the given user_id give the predicted rates for new_items"""
         self._validate_predict_input(user_id, new_items)
 
@@ -38,7 +40,8 @@ class ItemBasedColabCos(base.BaseRecommender):
         user_info = self.dict_user_ratings.get(user_id)
         csr_user_matrix = self.get_user_matrix(user_info)
         l_user_ratings = getattr(user_info, rating_col)
-        new_ratings = self.get_new_ratings(csr_new_items_matrix, csr_user_matrix, l_user_ratings)
+        new_ratings = self.get_new_ratings(csr_new_items_matrix, csr_user_matrix, l_user_ratings,
+                                           min_similarity, user_id)
         return self._prepare_prediction_output(new_items, new_ratings)
 
     def get_user_matrix(self, user_info):
@@ -48,9 +51,15 @@ class ItemBasedColabCos(base.BaseRecommender):
     def get_items_matrix(self, new_items: ItemFeature):
         return new_items.feature_matrix
 
-    def get_new_ratings(self, csr_new_items_matrix, csr_user_matrix, l_user_ratings):
+    def get_new_ratings(self, csr_new_items_matrix, csr_user_matrix, l_user_ratings, min_similarity,
+                        user_id=None):
         similarities = metrics.pairwise.cosine_similarity(csr_new_items_matrix, csr_user_matrix,
                                                           dense_output=True)
+        if user_id is not None:
+            self.dict_sat_to_zero[user_id] = (similarities < min_similarity).mean()
+            self.dict_similarity_dist[user_id] = similarities.ravel()
+
+        similarities[similarities < min_similarity] = 0
         similarities_weighted = similarities.dot(np.diag(l_user_ratings))
         new_ratings = similarities_weighted.sum(axis=1) / abs(similarities).sum(axis=1)
         new_ratings_flat = np.array(new_ratings).ravel()
