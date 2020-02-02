@@ -23,6 +23,34 @@ def get_item_feature_from_tag_genome(df_genome, number_of_tag_per_movie):
     return item_features
 
 
+def get_random_n_tags(df_tags, number_of_tag_per_movie, one_row_per_movie, sep='|', random_state=None):
+    df_tags_sampled = df_tags[[config.movieId_col, 'tag']].groupby(config.movieId_col, as_index=False).apply(
+        lambda x:
+        x.sample(number_of_tag_per_movie, random_state=random_state)
+        if len(x) > number_of_tag_per_movie else x
+    )
+    if one_row_per_movie:
+        df_tags_sampled = \
+            df_tags_sampled.groupby(config.movieId_col)[config.tag_col]. \
+            agg(lambda x: sep.join(x.astype(str)))
+    return pd.DataFrame(df_tags_sampled)
+
+
+def get_item_feature_from_tag(df_tags, number_of_tag_per_movie, random_state=None):
+    count = CountVectorizer()
+    df_tags_sampled = get_random_n_tags(df_tags, number_of_tag_per_movie,
+                                        one_row_per_movie=True,
+                                        random_state=random_state)
+    feature_matrix = count.fit_transform(df_tags_sampled[config.tag_col].astype(str))
+    item_ids = df_tags_sampled.index
+    feature_names = count.get_feature_names()
+
+    item_features = ItemFeature(item_ids=item_ids,
+                                feature_names=feature_names,
+                                feature_matrix=feature_matrix)
+    return item_features
+
+
 class RatingNormalizer(object):
     def __init__(self):
         pass

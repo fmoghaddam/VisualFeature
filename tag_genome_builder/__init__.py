@@ -111,7 +111,7 @@ class Base(object):
                        one_row_per_movie=False, sep='|') -> pd.DataFrame:
         df_tag_genome.sort_values(relevance_col, ascending=False, inplace=True)
 
-        df_top_n_tags = df_tag_genome.groupby([movieId_col]).head(n).sort_values([movieId_col, tagId_col],
+        df_top_n_tags = df_tag_genome.groupby([config.movieId_col]).head(n).sort_values([movieId_col, tagId_col],
                                                                                  ascending=False)
         if one_row_per_movie:
             df_top_n_tags =\

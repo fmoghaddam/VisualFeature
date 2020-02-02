@@ -112,36 +112,43 @@ def update_progress(progress, t0=None):
     print(text)
 
 
-def drop_nulls(df):
-    subset = df.filter(regex='_predicted').columns
+def drop_nulls(df, prediction_column_suffix=None):
+    if prediction_column_suffix is None:
+        subset = df.filter(regex='_predicted').columns
+    else:
+        subset = ['rating_predicted' + prediction_column_suffix]
     return df.dropna(subset=subset)
 
 
 def performance_report(df_rating_pred, prediction_column_suffix=''):
     if prediction_column_suffix != '':
         prediction_column_suffix = '_' + prediction_column_suffix
-    mae = metrics.regression.mean_absolute_error(drop_nulls(df_rating_pred)[config.rating_col],
-                                                 drop_nulls(df_rating_pred)
+    mae = metrics.regression.mean_absolute_error(drop_nulls(df_rating_pred, prediction_column_suffix)
+                                                 [config.rating_col],
+                                                 drop_nulls(df_rating_pred, prediction_column_suffix)
                                                  [f'{config.rating_col}_predicted{prediction_column_suffix}'])
-    mse = metrics.regression.mean_squared_error(drop_nulls(df_rating_pred)[config.rating_col],
-                                                drop_nulls(df_rating_pred)
+    mse = metrics.regression.mean_squared_error(drop_nulls(df_rating_pred, prediction_column_suffix)
+                                                [config.rating_col],
+                                                drop_nulls(df_rating_pred, prediction_column_suffix)
                                                 [f'{config.rating_col}_predicted{prediction_column_suffix}'])
     rmse = np.sqrt(mse)
-    r2 = metrics.regression.r2_score(drop_nulls(df_rating_pred)[config.rating_col],
-                                     drop_nulls(df_rating_pred)
+    r2 = metrics.regression.r2_score(drop_nulls(df_rating_pred, prediction_column_suffix)
+                                     [config.rating_col],
+                                     drop_nulls(df_rating_pred, prediction_column_suffix)
                                      [f'{config.rating_col}_predicted{prediction_column_suffix}'])
-    mean = drop_nulls(df_rating_pred)[config.rating_col].mean()
-    nrmse = rmse / mean
+    mean_ratings = drop_nulls(df_rating_pred, prediction_column_suffix)[config.rating_col].mean()
+    nrmse = rmse / mean_ratings
     residual_std = df_rating_pred['residual' + prediction_column_suffix].std()
     residual_mean = df_rating_pred['residual' + prediction_column_suffix].mean()
-
-    df_regression_report = pd.DataFrame({'Average Score': mean,
+    covergae = df_rating_pred[f'{config.rating_col}_predicted{prediction_column_suffix}'].notnull().mean()
+    df_regression_report = pd.DataFrame({'Average Score': mean_ratings,
                                          'MAE': mae,
                                          'RMSE': rmse,
                                          'NRMSE': nrmse,
                                          'R2': r2,
                                          'Std of residuals': residual_std,
-                                         'Avg of residuals': residual_mean
+                                         'Avg of residuals': residual_mean,
+                                         'Coverage': covergae
                                          },
                                         index=[prediction_column_suffix[1:]])
     return df_regression_report

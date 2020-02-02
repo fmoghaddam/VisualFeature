@@ -28,8 +28,11 @@ def train_test_split(df_rating: pd.DataFrame, item_features: base.ItemFeature, s
     df_rating_train, df_rating_test = \
         my_train_test_split(df_rating, stratify=df_rating[config.userId_col],
                             strategy=strategy, **kwargs)
-    item_features_train =\
-        item_features.get_item_feature_by_list_of_items(df_rating_train[config.movieId_col].unique())
-    item_features_test =\
-        item_features.get_item_feature_by_list_of_items(df_rating_test[config.movieId_col].unique())
-    return df_rating_train, df_rating_test, item_features_train, item_features_test
+    if item_features is not None:
+        item_features_train =\
+            item_features.get_item_feature_by_list_of_items(df_rating_train[config.movieId_col].unique())
+        item_features_test =\
+            item_features.get_item_feature_by_list_of_items(df_rating_test[config.movieId_col].unique())
+        return df_rating_train, df_rating_test, item_features_train, item_features_test
+    else:
+        return df_rating_train, df_rating_test
