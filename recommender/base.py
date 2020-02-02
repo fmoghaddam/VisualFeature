@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import multiprocessing
 import functools
-from tqdm import tqdm_notebook as tqdm
+from tqdm import tqdm
 
 import time
 from lib import check_is_fitted, tools

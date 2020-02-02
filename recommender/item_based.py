@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from collections import namedtuple
 from sklearn import metrics
-from .base import ItemFeature
+from recommender.base import ItemFeature
 from recommender import base
 import config
 
