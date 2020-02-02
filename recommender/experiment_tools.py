@@ -1,6 +1,6 @@
 import multiprocessing
 import functools
-from tqdm import tqdm_notebook as tqdm
+from joblib import Parallel, delayed
 from recommender import item_based, tools as rtools, preprocessing as rpp
 import config
 
@@ -21,11 +21,7 @@ def get_predictions_for_different_number_of_tags_loop(df_predicted_tag_genome,
     test_users = df_rating_test[config.userId_col].unique()
     recommendations = recommend.predict_on_list_of_users(test_users, df_rating_test, item_features_test,
                                                          n_jobs=1)
-    return recommendations, prediction_column_suffix
-    # print(prediction_column_suffix)
-    # print(performance_report(df_rating_test, prediction_column_suffix=prediction_column_suffix))
-    # return df_rating_test
-    # df_rating_test.to_csv(f'df_rating_test_tg_vf{number_of_tag_per_movie}.csv')
+    return [recommendations, prediction_column_suffix]
 
 
 def get_predictions_for_different_number_of_tags(df_predicted_tag_genome,
@@ -40,12 +36,7 @@ def get_predictions_for_different_number_of_tags(df_predicted_tag_genome,
                              df_rating_train,
                              df_rating_test
                              )
-    pool = multiprocessing.Pool(n_jobs)
-    recs = []
-    # for number_of_tag_per_movie in steps:
-    for rec in tqdm(pool.imap(loop, steps), total=len(steps)):
-        recs.append(rec)
-    # recs = pool.map(loop, steps)
+    recs = Parallel(n_jobs=n_jobs)(delayed(loop)(number_of_tag_per_movie) for number_of_tag_per_movie in steps)
     for recommendations, prediction_column_suffix in recs:
         df_rating_test = rtools.prepare_recommendations_df(df_rating_test=df_rating_test,
                                                            recommendations=recommendations,
