@@ -36,7 +36,10 @@ def get_predictions_for_different_number_of_tags(df_predicted_tag_genome,
                              df_rating_train,
                              df_rating_test
                              )
-    recs = Parallel(n_jobs=n_jobs)(delayed(loop)(number_of_tag_per_movie) for number_of_tag_per_movie in steps)
+    recs = Parallel(n_jobs=n_jobs, verbose=30)(
+        delayed(loop)(number_of_tag_per_movie)
+        for number_of_tag_per_movie in steps
+    )
     for recommendations, prediction_column_suffix in recs:
         df_rating_test = rtools.prepare_recommendations_df(df_rating_test=df_rating_test,
                                                            recommendations=recommendations,

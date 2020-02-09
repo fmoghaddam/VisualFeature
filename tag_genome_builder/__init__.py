@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import sklearn.preprocessing as pp
 from scipy import sparse
@@ -46,14 +47,20 @@ class VisualFeatureNormalizer(object):
         pass
 
     def fit(self, df_vf, normalizer):
-        self.normalizer = normalizer
+        self.normalizer = clone(normalizer)
         self.normalizer.fit(df_vf)
 
-    def transform(self, df_vf: pd.DataFrame) -> (pd.DataFrame, object):
+    def transform(self, df_vf: pd.DataFrame) -> pd.DataFrame:
         check_is_fitted(self, 'normalizer')
+        # print(df_vf.shape)
+        # print(df_vf.isnull().sum().sum())
         normalized_agg_visual_features = self.normalizer.transform(df_vf)
+        # print('numpy', normalized_agg_visual_features.shape)
+        # print('numpy', np.isnan(normalized_agg_visual_features).sum())
         df_agg_normalized = pd.DataFrame(normalized_agg_visual_features,
                                          columns=df_vf.columns, index=df_vf.index)
+        # print(df_agg_normalized.shape)
+        # print(df_agg_normalized.isnull().sum().sum())
         return df_agg_normalized
 
     def fit_transform(self, df_vf: pd.DataFrame, normalizer: object) -> pd.DataFrame:
@@ -111,8 +118,8 @@ class Base(object):
                        one_row_per_movie=False, sep='|') -> pd.DataFrame:
         df_tag_genome.sort_values(relevance_col, ascending=False, inplace=True)
 
-        df_top_n_tags = df_tag_genome.groupby([config.movieId_col]).head(n).sort_values([movieId_col, tagId_col],
-                                                                                 ascending=False)
+        df_top_n_tags = df_tag_genome.groupby([config.movieId_col]).head(n).\
+            sort_values([movieId_col, tagId_col], ascending=False)
         if one_row_per_movie:
             df_top_n_tags =\
                 df_top_n_tags.groupby(config.movieId_col)[config.tagId_col].\
