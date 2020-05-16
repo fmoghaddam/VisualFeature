@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import os
 from scipy import sparse
 from joblib import Parallel, delayed
 import sklearn.preprocessing as pp
@@ -191,6 +192,8 @@ def try_one(estimator,
     estimator.fit(X_train, y_train)
     pred = estimator.predict(X_test)
     print(f'RMSE {prediction_column_suffix}', np.sqrt(metrics.mean_squared_error(y_test, pred)))
+    df = pd.DataFrame({prediction_column_suffix: pred})
+    df.to_csv(os.path.join('.', 'output', f'{prediction_column_suffix}.csv'), index=False)
     return prediction_column_suffix, pred
 
 

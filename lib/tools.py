@@ -123,16 +123,16 @@ def drop_nulls(df, prediction_column_suffix=None):
 def performance_report(df_rating_pred, prediction_column_suffix=''):
     if prediction_column_suffix != '':
         prediction_column_suffix = '_' + prediction_column_suffix
-    mae = metrics.regression.mean_absolute_error(drop_nulls(df_rating_pred, prediction_column_suffix)
+    mae = metrics.mean_absolute_error(drop_nulls(df_rating_pred, prediction_column_suffix)
                                                  [config.rating_col],
                                                  drop_nulls(df_rating_pred, prediction_column_suffix)
                                                  [f'{config.rating_col}_predicted{prediction_column_suffix}'])
-    mse = metrics.regression.mean_squared_error(drop_nulls(df_rating_pred, prediction_column_suffix)
+    mse = metrics.mean_squared_error(drop_nulls(df_rating_pred, prediction_column_suffix)
                                                 [config.rating_col],
                                                 drop_nulls(df_rating_pred, prediction_column_suffix)
                                                 [f'{config.rating_col}_predicted{prediction_column_suffix}'])
     rmse = np.sqrt(mse)
-    r2 = metrics.regression.r2_score(drop_nulls(df_rating_pred, prediction_column_suffix)
+    r2 = metrics.r2_score(drop_nulls(df_rating_pred, prediction_column_suffix)
                                      [config.rating_col],
                                      drop_nulls(df_rating_pred, prediction_column_suffix)
                                      [f'{config.rating_col}_predicted{prediction_column_suffix}'])
