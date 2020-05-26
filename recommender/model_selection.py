@@ -18,7 +18,9 @@ def my_train_test_split(df_rating: pd.DataFrame,
 
 def _split_last_n_movies_per_user(df_rating: pd.DataFrame, number_of_items_in_test_per_user: int):
     df_rating.sort_values(config.timestamp_col, inplace=True)
-    df_rating_test = df_rating.groupby(config.userId_col).tail(number_of_items_in_test_per_user)
+    df_rating_test = df_rating[df_rating[config.rating_col] >= 4].\
+        groupby(config.userId_col).\
+        tail(number_of_items_in_test_per_user)
     df_rating_train = df_rating.drop(df_rating_test.index)
     return df_rating_train, df_rating_test
 

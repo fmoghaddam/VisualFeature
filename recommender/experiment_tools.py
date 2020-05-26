@@ -59,24 +59,26 @@ def evaluate_item_based(df_ratings: pd.DataFrame, df_item_feature: pd.DataFrame,
                         prediction_column_suffix: str,
                         save_prediction_path: str,
                         threshold: float = .6,
-                        test_size: float = .25) -> pd.DataFrame:
+                        test_size: float = .25,
+                        normalizer=None) -> pd.DataFrame:
     df_ratings_filtered = df_ratings[df_ratings[config.movieId_col].isin(df_item_feature.index)]
     user_activities = df_ratings_filtered[config.userId_col].value_counts()
     df_ratings_filtered = df_ratings_filtered[df_ratings_filtered[config.userId_col].
         isin(user_activities[user_activities > 1].index)]
     df_rating_train, df_rating_test = \
         rms.train_test_split(df_ratings_filtered, item_features=None, strategy='sklearn', test_size=test_size)
-    vf_normalizer = tg_builder.VisualFeatureNormalizer()
-    normalizer = pp.StandardScaler()
     df_item_feature_train = df_item_feature.loc[df_rating_train[config.movieId_col].unique()]
-    df_agg_train_normalized = vf_normalizer.fit_transform(df_item_feature_train, normalizer)
     df_item_feature_test = df_item_feature.loc[df_rating_test[config.movieId_col].unique()]
-    df_agg_test_normalized = vf_normalizer.transform(df_item_feature_test)
+    if normalizer is not None:
+        vf_normalizer = tg_builder.VisualFeatureNormalizer()
+        # normalizer = pp.StandardScaler()
+        df_item_feature_train = vf_normalizer.fit_transform(df_item_feature_train, normalizer)
+        df_item_feature_test = vf_normalizer.transform(df_item_feature_test)
 
     item_features_w2v_train = rpp.ItemFeature()
-    item_features_w2v_train.from_dataframe(df_agg_train_normalized)
+    item_features_w2v_train.from_dataframe(df_item_feature_train)
     item_features_w2v_test = rpp.ItemFeature()
-    item_features_w2v_test.from_dataframe(df_agg_test_normalized)
+    item_features_w2v_test.from_dataframe(df_item_feature_test)
     recommend = item_based.ItemBasedColabCos()
     recommend.fit(df_rating_train, item_features_w2v_train)
     test_users = df_rating_test[config.userId_col].unique()
@@ -91,3 +93,4 @@ def evaluate_item_based(df_ratings: pd.DataFrame, df_item_feature: pd.DataFrame,
                                                        prediction_column_suffix=prediction_column_suffix)
     df_rating_test.to_csv(save_prediction_path)
     return tools.performance_report(df_rating_test, prediction_column_suffix=prediction_column_suffix)
+

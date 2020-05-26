@@ -4,11 +4,13 @@ import pandas as pd
 import multiprocessing
 import functools
 from tqdm import tqdm
+from joblib import Parallel, delayed
 
 import time
 from lib import check_is_fitted, tools
 import config
 from base.data_types import ItemFeature
+
 movieId_col = config.movieId_col
 userId_col = config.userId_col
 rating_col = config.rating_col
@@ -88,7 +90,51 @@ class BaseRecommender(object):
     def _loop(self, df_rating_test, item_features, user, min_similarity):
         _movie_ids = df_rating_test.loc[
             df_rating_test[config.userId_col] == user, config.movieId_col].tolist()
+        return self.predict_and_filter(item_features, _movie_ids, user, min_similarity)
+
+    def predict_and_filter(self, item_features, _movie_ids, user, min_similarity):
         new_items = item_features.get_item_feature_by_list_of_items(_movie_ids)
         _pred = self.predict(user, new_items, min_similarity=min_similarity)
         _pred[config.userId_col] = user
         return _pred.reset_index()[[config.userId_col, config.movieId_col, f'{config.rating_col}_predicted']]
+
+    def predict_on_list_of_users_for_precision(self, users: list, item_features: ItemFeature,
+                                               df_rating: pd.DataFrame,
+                                               df_rating_test: pd.DataFrame,
+                                               number_of_new_items_per_user: int,
+                                               min_similarity: float,
+                                               n_jobs: int) -> pd.DataFrame:
+        recs = Parallel(n_jobs=n_jobs, verbose=30)(
+            delayed(self.predict_for_precision)(user, item_features, df_rating, df_rating_test,
+                                                number_of_new_items_per_user, min_similarity)
+            for user in users
+        )
+        return pd.concat(recs, ignore_index=True)
+
+    def predict_for_precision(self, user: int, item_features: ItemFeature, df_rating: pd.DataFrame,
+                              df_rating_test: pd.DataFrame,
+                              number_of_new_items_per_user: int,
+                              min_similarity: float) -> pd.DataFrame:
+        test_items = df_rating_test.loc[
+            df_rating_test[config.userId_col] == user, config.movieId_col].tolist()
+        rated_items = set(df_rating.loc[df_rating[config.userId_col] == config.userId_col,
+                                        config.movieId_col])
+        unrated_items = set(df_rating[config.movieId_col]).difference(rated_items)
+        items_to_rate = np.random.choice(unrated_items,
+                                         min(len(unrated_items), number_of_new_items_per_user))
+        items_for_prediction = np.append(test_items, items_to_rate)
+        return self.predict_and_filter(item_features, items_for_prediction, user, min_similarity)
+
+# TODO
+"""
+* load df_rating filtered to movies we have
+write a function that does the following
+* load item features and create item_feature object 
+ 
+* do train test split
+* create a recommender object
+* train the recommender object
+* get list of users
+* call predict_on_list_of_users_for_precision method from the recommender object
+* save the result on disk
+"""
